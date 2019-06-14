@@ -50,10 +50,16 @@ import statsmodels.api as sm
 
 # FUNCTIONS
 # 1. Статистика доли классов целевой функции
-def part_regular_client(dataset):
-    part_score = dataset.groupby('REGULAR_CUSTOMER').size()/len(dataset)
+def part_regular_client(dataset,score):
+    count_score = dataset.groupby(score).size()
+    part_score = count_score/len(dataset)
+    print('Количество объектов класса "взял более одного авто" составляет '+ str(count_score[1]))
+    print('Количество объектов класса "взял только одно авто" составляет '+ str(count_score[0]))
     print('Доля класса "взял более одного авто": '+ str((part_score[1])*100)+ ' %')
     print('Доля класса "взял только одно авто": '+ str((part_score[0])*100)+ ' %')
+    
+    sns.countplot(x=score,data=dataset,palette='hls')
+    plt.show
 
 # 2. Статистика по типам данных признаков
 def dataset_params(dataset,score):
@@ -238,8 +244,9 @@ def model_comparison_chart(dataset,value):
     plt.title('Model Comparison (Cross-Validation) on f1_score', size = 20)
 
 # Считываем данные в датафрейм
-# reg_clients = pd.read_csv('/home/varvara/anton/projects/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1"
-reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('/home/varvara/anton/projects/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 
 # Выводим статистику по датафрейму
 reg_clients.shape
@@ -530,3 +537,65 @@ plt.title('ROC')
 plt.legend(loc="lower right")
 plt.savefig('GradBoost_ROC')
 plt.show()
+
+# =============================================================================
+# Проверим работоспособность модели на клиентах, оформивших второе авто
+# после построения модели.
+# =============================================================================
+# Считываем данные проверки модели в датафрейм
+check_reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20190613.csv', encoding = "ISO-8859-1")
+#check_rent_clients = pd.read_csv('D:/Models/development/9_rent_house/check_living/real_check_living_model_clid_20190613.csv', encoding = "ISO-8859-1")
+
+check_reg_clients.head()
+check_reg_clients.shape
+
+# Удалим ненужные поля ай-ди клиентов
+check_reg_clients = check_reg_clients.drop(['CLID_CRM','CLID_TRAN','INTERVAL'], axis=1)
+
+# Заменим все значиения "Not Available" на np.nan
+check_reg_clients = check_reg_clients.replace({'Not Available': np.nan})
+
+# Предобработаем все категориальные предикторы
+new_categorical_features = check_reg_clients.select_dtypes(include=[np.object])
+new_categorical_features.shape
+
+# Обработаем категориальные признаки с помощью LabelEncoder
+z = len(new_categorical_features.columns)
+for x in range(0,z):
+    new_categorical_features.iloc[:,x] = labelencoder.fit_transform(new_categorical_features.iloc[:,x].values.astype(str))
+
+# Выделим все вещественные предикторы 
+new_numeric_features = check_reg_clients.select_dtypes(include = [np.number])
+
+# соединяем категориальные и количественные признаки
+new_features = pd.concat([new_numeric_features, new_categorical_features], axis = 1)
+new_features.shape
+new_features.head()
+
+# Заполним отсутствующие данные медианными значениями
+new_train_features = new_features
+new_features = imp_mean.fit_transform(new_train_features)
+new_features = pd.DataFrame(new_features)
+new_features.columns = new_train_features.columns
+
+# Получаем итоговый датафрейм для анализа
+client_100 = pd.DataFrame()
+client_100 = new_features
+client_100.shape
+client_100.head()
+
+# Создаем итоговую таблицу с ай-ди клиентов расчитанными значениями 
+y = client_100['REP_CLID']
+x = client_100.drop(columns = ['REP_CLID'])
+exit_data = pd.DataFrame(columns = ['CLID','PRED'])
+
+# Заполним итоговую таблицу готовыми значениями
+for i in range(len(y)):
+    z = gradBoost.predict(x[i:i+1])
+    exit_data.loc[i,'CLID'] = (y[i])
+    exit_data.loc[i,'PRED'] = z[0].astype(int)
+
+# Посмотрим на распределение расчитанных значений и отклонение от рельных значений
+exit_data.shape
+exit_data.head()
+part_regular_client(exit_data,exit_data['PRED'])
