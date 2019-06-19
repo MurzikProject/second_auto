@@ -233,7 +233,7 @@ def model_comparison_chart(dataset,value):
     dataset.sort_values(value, ascending = False).plot(x = 'model',
                                                        y = value,
                                                        kind = 'barh',
-                                                       color = 'red',
+                                                       color = 'green',
                                                        edgecolor = 'black')
      
     plt.ylabel('Models')
@@ -241,11 +241,14 @@ def model_comparison_chart(dataset,value):
     plt.xlabel(value)
     plt.xticks(size = 14)
     plt.xlim([0.0, 1.05])
-    plt.title('Model Comparison (Cross-Validation) on f1_score', size = 20)
-
+    plt.title('Model comparison (cross-validation) on '+value, size = 20)
+#==============================================================================
+# 1. DATA CLEANING AND FORMATTING
+#==============================================================================
 # Считываем данные в датафрейм
 #reg_clients = pd.read_csv('/home/varvara/anton/projects/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
-reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 
 # Выводим статистику по датафрейму
@@ -254,20 +257,14 @@ reg_clients.shape
 # Смотрим напервые 5 объектов и их признаки
 reg_clients.head()
 
-# Посмотрим на доли классов (не купит 2 авто/купит 2 авто)
-part_regular_client(reg_clients)
+# Посмотрим на доли и количество объектов в классах (не купит 2 авто/купит 2 авто)
+part_regular_client(reg_clients,'REGULAR_CUSTOMER')
 
-# Вычислим количество объектов 
-reg_clients.groupby('REGULAR_CUSTOMER').size()
-
-# Посмотрим на распределение целефой функции
-sns.countplot(x='REGULAR_CUSTOMER',data=reg_clients,palette='hls')
-plt.show
-
-# Посмотрим на распределение интервала
+# Посмотрим на распределение интервала повторного лизинге в базовых единицах - месяц.
 sns.countplot(x='INTERVAL',data = reg_clients[reg_clients.INTERVAL > 0],palette='hls')
 plt.show
 
+# Поскольку в месяцах распределение не сильно информативное, сгруппируем интервал в годах.
 new_interval = reg_clients.loc[:, reg_clients.columns == 'INTERVAL']
 len_of_df = len(new_interval)
 
@@ -297,7 +294,7 @@ while i < len_of_df:
     new_interval['INTERVAL'][i] = value
     i += 1
 
-# Посмотрим на распределение интервала
+# Посмотрим на распределение интервала повторного лизинга в годах
 sns.countplot(x='INTERVAL',data = new_interval[new_interval.INTERVAL > 0],palette='hls')
 plt.show
 
@@ -306,11 +303,6 @@ reg_clients = reg_clients.drop(['REP_CLID','CLID_CRM','CLID_TRAN'], axis=1)
 
 # Заменим все значиения "Not Available" на np.nan
 reg_clients = reg_clients.replace({'Not Available': np.nan})
-
-# Для эффективной работы numpy необходимо заменить все значиения
-# "Not Available" на np.nan
-reg_clients = reg_clients.replace({'Not Available': np.nan})
-
 
 # Удалим из датасета те поля, в которых заполнение менее 50%
 missing_features = missing_values_table(reg_clients.drop(columns = ['REGULAR_CUSTOMER']))
@@ -321,7 +313,6 @@ reg_clients.shape
 
 # Посмотрим на распределение признаков по типам данных
 dataset_params(reg_clients,'REGULAR_CUSTOMER')
-
 
 # разделим признаки на количественные и вещественные
 numeric_features = reg_clients.select_dtypes(include = [np.number])
@@ -346,7 +337,6 @@ categorical_features.shape
 # соединяем категориальные и количественные признаки
 features = pd.concat([numeric_features, categorical_features], axis = 1)
 features.shape
-
 
 # =============================================================================
 # 2. FEATURE ENGINEERING AND SELECTION
@@ -454,24 +444,30 @@ X_test.columns = train_features.columns
 model_comparison = pd.DataFrame({'model': ['Logistic Regression',
                                            'Ridge Classifier',
                                            'Gradient Boosting'],
-                                 'f1_score': [0.0,0.0,0.0]})
-
+                                           'accuracy': [0.0,0.0,0.0],
+                                           'f1_score': [0.0,0.0,0.0]})
 # Logistic Regression
 logReg = linear_model.LogisticRegression()
-y_scores, y_tests, model_comparison['f1_score'][0] = StraitKFold(logReg, X_train, y_train)
+y_scores, y_tests, model_comparison['accuracy'][0], model_comparison['f1_score'][0] = StraitKFold(logReg, X_train, y_train)
 ROC(y_scores, y_tests)
 
 # Ridge classifier
 ridge = linear_model.RidgeClassifier(random_state=2)
-y_scores, y_tests, model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
+y_scores, y_tests, model_comparison['accuracy'][1], model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
 ROC(y_scores, y_tests)
 
 # градиентный бустинг:
 gradBoost = ensemble.GradientBoostingClassifier()
-y_scores, y_tests, model_comparison['f1_score'][2] = StraitKFold(gradBoost, X_train, y_train)
+y_scores, y_tests, model_comparison['accuracy'][2], model_comparison['f1_score'][2] = StraitKFold(gradBoost, X_train, y_train)
 ROC(y_scores, y_tests)
 
-# Сравним производительность всех моделей
+# Посмотрим на матрицу с показателями производительности
+model_comparison.head()
+
+# Сравним производительность всех моделей по метрике accuracy
+model_comparison_chart(model_comparison,'accuracy')
+
+# Сравним производительность всех моделей по метрике f1_score
 model_comparison_chart(model_comparison,'f1_score')
 
 # =============================================================================
