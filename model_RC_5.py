@@ -28,6 +28,7 @@ sns.set(style="whitegrid", color_codes=True)
 from sklearn import preprocessing
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import Imputer
+from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
@@ -198,11 +199,14 @@ def StraitKFold(classifier, X, y):
         y_scores['fold_'+str(n)] = classifier.decision_function(X.iloc[test_index, :])
         y_pred['fold_'+str(n)] = classifier.predict(X.iloc[test_index, :])
         y_tests['fold_'+str(n)] = y.iloc[test_index, 0].values
-        f1 = np.append(f1, metrics.f1_score(y.iloc[test_index, 0], y_pred.iloc[:,n])) 
+        f1 = np.append(f1, metrics.f1_score(y.iloc[test_index, 0], y_pred.iloc[:,n]))
+        accuracy = np.append(f1, metrics.accuracy_score(y.iloc[test_index, 0], y_pred.iloc[:,n]))
         n += 1
     f1_score = np.mean(f1)
+    accuracy = np.mean(accuracy)
+    print('mean accuracy score: '+str(accuracy))
     print('mean f1 score: '+str(f1_score))
-    return y_scores, y_tests, f1_score
+    return y_scores, y_tests, accuracy, f1_score
 
 # 10. Функция построения AUC_ROC  
 def ROC(y_scores, y_test):
@@ -341,8 +345,42 @@ features.shape
 # =============================================================================
 # 2. FEATURE ENGINEERING AND SELECTION
 # =============================================================================
+# =============================================================================
+# Первый вариант посмотреть на влияние признаков - все признаки прогнать на 
+# разницу абсолютных значений мат ожиданий.
+# =============================================================================
+corr_columns = list(features.drop(columns = ['REGULAR_CUSTOMER','INTERVAL']).columns)
+corr_values = []
+nan_values = []
+
+for (i, column) in enumerate(corr_columns):
+    value = correl_calc(features[column])
+    if np.isnan(value):
+        nan_values.append(column)
+    else:
+        corr_values.append((column,np.abs(value)))
+
+# для удобства из списка (corr_values) создадим dataframe 'corr_data':
+corr_data = pd.DataFrame(corr_values, columns = ['Feature' , 'corr_value'])
+
+# отсортируем и выведем топ-20 вещественных признаков:
+sort_corr_data = corr_data.sort_values(by=['corr_value'], ascending=False)
+sort_corr_data[:30]
+top_sort_corr_data = sort_corr_data[:50]
+top_sort_corr_data
 
 # =============================================================================
+# Конструируем новый датасет со всеми объектами и 50 отобранными предикторами
+# =============================================================================
+features_final = features['REGULAR_CUSTOMER']
+
+for i in top_sort_corr_data['Feature']:
+    features_final = pd.concat([features_final, features[i]],axis=1, sort=False)
+
+features_final.shape
+
+# =============================================================================
+# Второй вариант посмотреть на влияние признаков - отдельно вещественных и категориальных.
 # Посмотрим на влияние вещественных признаков на целевую переменную
 # =============================================================================
 number_corr_columns = list(numeric_features.drop(columns = ['REGULAR_CUSTOMER','INTERVAL']).columns)
@@ -366,7 +404,6 @@ top20_number_sort_corr_data
 
 # для вышеприведенных 20 вещественных признаков построим распределение в разрезе классов
 numerical_features_distrib(features,top20_number_sort_corr_data)
-
 
 # =============================================================================
 # Посмотрим на влияние категориальных признаков на целевую переменную
@@ -427,6 +464,12 @@ imp_mean = SimpleImputer(missing_values=np.nan, strategy='median')
 X_train = imp_mean.fit_transform(train_features)
 X_test = imp_mean.transform(test_features)
 
+# Отмасштабируем признаки с помощью Стандартизации
+scaler = StandardScaler() 
+scaler.fit(X_train)
+X_train = scaler.transform(X_train)
+X_test = scaler.transform(X_test)
+
 # Проверим количесвто пустых значений в тестовом и обучающем датасете
 print('Missing values in training features: ', np.sum(np.isnan(X_train)))
 print('Missing values in testing features:  ', np.sum(np.isnan(X_test)))
@@ -436,6 +479,8 @@ X_test = pd.DataFrame(X_test)
 
 X_train.columns = train_features.columns
 X_test.columns = train_features.columns
+
+X_train.head(2)
 
 # =============================================================================
 # 4. COMPARE SEVERAL MACHINE LEARNING MODELS ON A PERFORMANCE METRIC
