@@ -252,7 +252,8 @@ def model_comparison_chart(dataset,value):
 # Считываем данные в датафрейм
 #reg_clients = pd.read_csv('/home/varvara/anton/projects/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
-reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
+reg_clients = pd.read_csv('D:/Models/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 
 # Выводим статистику по датафрейму
@@ -363,9 +364,8 @@ for (i, column) in enumerate(corr_columns):
 # для удобства из списка (corr_values) создадим dataframe 'corr_data':
 corr_data = pd.DataFrame(corr_values, columns = ['Feature' , 'corr_value'])
 
-# отсортируем и выведем топ-20 вещественных признаков:
+# отсортируем и выведем топ-50 признаков:
 sort_corr_data = corr_data.sort_values(by=['corr_value'], ascending=False)
-sort_corr_data[:30]
 top_sort_corr_data = sort_corr_data[:50]
 top_sort_corr_data
 
@@ -584,8 +584,8 @@ plt.show()
 # после построения модели.
 # =============================================================================
 # Считываем данные проверки модели в датафрейм
-check_reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20190613.csv', encoding = "ISO-8859-1")
-#check_rent_clients = pd.read_csv('D:/Models/development/9_rent_house/check_living/real_check_living_model_clid_20190613.csv', encoding = "ISO-8859-1")
+#check_reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20190613.csv', encoding = "ISO-8859-1")
+check_reg_clients = pd.read_csv('D:/Models/development/5_second_auto/check_second_auto/real_check_second_auto_20190620.csv', encoding = "ISO-8859-1")
 
 check_reg_clients.head()
 check_reg_clients.shape
