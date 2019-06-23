@@ -44,11 +44,6 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn import ensemble
 
-# SMOTE library
-#from imblearn.over_sampling import SMOTE
-# stats library
-import statsmodels.api as sm
-
 # FUNCTIONS
 # 1. Статистика доли классов целевой функции
 def part_regular_client(dataset,score):
@@ -246,14 +241,29 @@ def model_comparison_chart(dataset,value):
     plt.xticks(size = 14)
     plt.xlim([0.0, 1.05])
     plt.title('Model comparison (cross-validation) on '+value, size = 20)
+    
+# 12. Расчет коэффициента GINI
+def gini(actual,pred):
+    assert (len(actual)==len(pred))
+    all = np.asarray(np.c_[actual,pred,np.arange(len(actual))], dtype=np.float)
+    all = all[np.lexsort((all[:,2],-1*all[:,1]))]
+    totalLosses = all[:,0].sum()
+    giniSum = all[:,0].cumsum().sum()/totalLosses
+        
+    giniSum -= (len(actual)+1)/2
+    return giniSum/len(actual)
+
+# 13. Расчет нормализированного коэффициента GINI
+def gini_normalized(actual,pred):
+    return gini(actual,pred)/gini(actual,actual)
 #==============================================================================
 # 1. DATA CLEANING AND FORMATTING
 #==============================================================================
 # Считываем данные в датафрейм
 #reg_clients = pd.read_csv('/home/varvara/anton/projects/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
-#reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
-reg_clients = pd.read_csv('D:/Models/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
+reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('D:/Models/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 
 # Выводим статистику по датафрейму
@@ -578,6 +588,12 @@ plt.title('ROC')
 plt.legend(loc="lower right")
 plt.savefig('GradBoost_ROC')
 plt.show()
+
+# Расчитаем показатели GINI:
+gini_predictions = gini(y_test,gradBoost.predict(X_test))
+gini_max = gini(y_test,y_test)
+ngini = gini_normalized(y_test,gradBoost.predict(X_test))
+print('Gini: %.5f, Max.Gini: %.5f, Normalized Gini: %.5f' % (gini_predictions,gini_max,ngini))
 
 # =============================================================================
 # Проверим работоспособность модели на клиентах, оформивших второе авто
