@@ -33,7 +33,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
-
 from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
@@ -594,6 +593,22 @@ gini_predictions = gini(y_test,gradBoost.predict(X_test))
 gini_max = gini(y_test,y_test)
 ngini = gini_normalized(y_test,gradBoost.predict(X_test))
 print('Gini: %.5f, Max.Gini: %.5f, Normalized Gini: %.5f' % (gini_predictions,gini_max,ngini))
+
+# Построим датасет со значениями классификатора и вероятностями этих значений
+exit_data = pd.DataFrame(columns = ['PRED','PROB'])
+y = y_test
+x = X_test
+# Заполним итоговую таблицу готовыми значениями
+for i in range(len(y)):
+    z_pred = gradBoost.predict(x[i:i+1])
+    z_prob = gradBoost.predict_proba(x[i:i+1])
+    exit_data.loc[i,'PRED'] = z_pred[0].astype(int)
+    exit_data.loc[i,'PROB'] = z_prob[0]
+
+exit_data.shape
+exit_data.head(10)
+
+print(exit_data['PROB'][0:2])
 
 # =============================================================================
 # Проверим работоспособность модели на клиентах, оформивших второе авто
