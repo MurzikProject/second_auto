@@ -259,9 +259,9 @@ def gini_normalized(actual,pred):
 # 1. DATA CLEANING AND FORMATTING
 #==============================================================================
 # Считываем данные в датафрейм
-#reg_clients = pd.read_csv('/home/varvara/anton/projects/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
+#reg_clients = pd.read_csv('/home/varvara/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190830.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
-reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
+reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190830.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('D:/Models/development/5_second_auto/data_second_auto/second_auto_without_prosr_20190519.csv', low_memory=False, encoding = "ISO-8859-1")
 #reg_clients = pd.read_csv('D:/Models/development/5_clients_for_life/auto_clid_20190519_rem.csv', low_memory=False, encoding = "ISO-8859-1")
 
@@ -615,8 +615,9 @@ print(exit_data['PROB'][0:2])
 # после построения модели.
 # =============================================================================
 # Считываем данные проверки модели в датафрейм
-#check_reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20190613.csv', encoding = "ISO-8859-1")
-check_reg_clients = pd.read_csv('D:/Models/development/5_second_auto/check_second_auto/real_check_second_auto_20190620.csv', encoding = "ISO-8859-1")
+check_reg_clients = pd.read_csv('/home/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20191031.csv', encoding = "ISO-8859-1")
+#check_reg_clients = pd.read_csv('D:/Models/development/5_second_auto/check_second_auto/real_check_second_auto_20191031.csv', encoding = "ISO-8859-1")
+#check_reg_clients = pd.read_csv('/home/varvara/anton/Projects/python/development/5_second_auto/check_second_auto/real_check_second_auto_20191031.csv', encoding = "ISO-8859-1")
 
 check_reg_clients.head()
 check_reg_clients.shape
@@ -671,3 +672,9 @@ for i in range(len(y)):
 exit_data.shape
 exit_data.head()
 part_regular_client(exit_data,exit_data['PRED'])
+
+count_score = exit_data.groupby(exit_data['PRED']).size()
+count_score
+
+print(exit_data)
+print(exit_data[exit_data['PRED']==1])
