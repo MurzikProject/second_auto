@@ -504,11 +504,11 @@ model_comparison = pd.DataFrame({'model': ['Logistic Regression',
 logReg = linear_model.LogisticRegression()
 y_scores, y_tests, model_comparison['accuracy'][0], model_comparison['f1_score'][0] = StraitKFold(logReg, X_train, y_train)
 ROC(y_scores, y_tests)
-
-# Ridge classifier
-ridge = linear_model.RidgeClassifier(random_state=2)
-y_scores, y_tests, model_comparison['accuracy'][1], model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
-ROC(y_scores, y_tests)
+    
+    # Ridge classifier
+    ridge = linear_model.RidgeClassifier(random_state=2)
+    y_scores, y_tests, model_comparison['accuracy'][1], model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
+    ROC(y_scores, y_tests)
 
 # градиентный бустинг:
 gradBoost = ensemble.GradientBoostingClassifier()
@@ -610,6 +610,26 @@ exit_data.head(10)
 
 print(exit_data['PROB'][0:2])
 
+def PRED_PROB_stats(dataset,feature):
+    count_pred = dataset.groupby(feature).size()
+    
+    #add two column PRED_0 and PRED_1
+    dataset['PRED_0'] = 0
+    dataset['PRED_1'] = 1
+    
+    #add two column PROB_0 and PROB_1
+    dataset['PROB_0'] = 0
+    dataset['PROB_1'] = 0
+    x = len(exit_data.index)
+    for i in range(x):
+        dataset['PRED_0'][i] = dataset[feature][i][0]
+        dataset['PRED_1'][i] = dataset[feature][i][1]
+    
+    return count_pred
+
+PRED_PROB_stats(exit_data,'PRED')
+print(exit_data['PROB'][2][1])
+len(exit_data.index)
 # =============================================================================
 # Проверим работоспособность модели на клиентах, оформивших второе авто
 # после построения модели.
