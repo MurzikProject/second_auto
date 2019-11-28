@@ -255,6 +255,23 @@ def gini(actual,pred):
 # 13. Расчет нормализированного коэффициента GINI
 def gini_normalized(actual,pred):
     return gini(actual,pred)/gini(actual,actual)
+
+# 14. Добавление столбцов с веротяностями исходов 0 и 1 в датасет c значениями классификатора 
+def PRED_PROB_stats(dataset,feature):
+    # Создадим 2 списка для хранения вероятностей 0 и 1
+    prob_0_values = []
+    prob_1_values = []
+    
+    # Заполним вероятности исходов 0 и 1 для каждого объекта
+    x = len(dataset.index)
+    for i in range(x):
+        prob_0_values.append(dataset[feature][i][0])
+        prob_1_values.append(dataset[feature][i][1])
+    
+    # Добавим два поля в датасет с соответствующими вероятностями    
+    dataset['PROB_0'] = prob_0_values
+    dataset['PROB_1'] = prob_1_values
+
 #==============================================================================
 # 1. DATA CLEANING AND FORMATTING
 #==============================================================================
@@ -311,6 +328,9 @@ while i < len_of_df:
 # Посмотрим на распределение интервала повторного лизинга в годах
 sns.countplot(x='INTERVAL',data = new_interval[new_interval.INTERVAL > 0],palette='hls')
 plt.show
+
+# Постмотрим на распределение по квартилям интервала
+reg_clients[reg_clients.INTERVAL>0].INTERVAL.describe()
 
 # Удалим ненужные поля ай-ди клиентов
 reg_clients = reg_clients.drop(['REP_CLID','CLID_CRM','CLID_TRAN'], axis=1)
@@ -505,10 +525,10 @@ logReg = linear_model.LogisticRegression()
 y_scores, y_tests, model_comparison['accuracy'][0], model_comparison['f1_score'][0] = StraitKFold(logReg, X_train, y_train)
 ROC(y_scores, y_tests)
     
-    # Ridge classifier
-    ridge = linear_model.RidgeClassifier(random_state=2)
-    y_scores, y_tests, model_comparison['accuracy'][1], model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
-    ROC(y_scores, y_tests)
+# Ridge classifier
+ridge = linear_model.RidgeClassifier(random_state=2)
+y_scores, y_tests, model_comparison['accuracy'][1], model_comparison['f1_score'][1] = StraitKFold(ridge, X_train, y_train)
+ROC(y_scores, y_tests)
 
 # градиентный бустинг:
 gradBoost = ensemble.GradientBoostingClassifier()
@@ -598,6 +618,7 @@ print('Gini: %.5f, Max.Gini: %.5f, Normalized Gini: %.5f' % (gini_predictions,gi
 exit_data = pd.DataFrame(columns = ['PRED','PROB'])
 y = y_test
 x = X_test
+
 # Заполним итоговую таблицу готовыми значениями
 for i in range(len(y)):
     z_pred = gradBoost.predict(x[i:i+1])
@@ -608,28 +629,10 @@ for i in range(len(y)):
 exit_data.shape
 exit_data.head(10)
 
-print(exit_data['PROB'][0:2])
+# Сгруппируем объекты по децилям вероятностей
+PRED_PROB_stats(exit_data,'PROB')
 
-def PRED_PROB_stats(dataset,feature):
-    count_pred = dataset.groupby(feature).size()
-    
-    #add two column PRED_0 and PRED_1
-    dataset['PRED_0'] = 0
-    dataset['PRED_1'] = 1
-    
-    #add two column PROB_0 and PROB_1
-    dataset['PROB_0'] = 0
-    dataset['PROB_1'] = 0
-    x = len(exit_data.index)
-    for i in range(x):
-        dataset['PRED_0'][i] = dataset[feature][i][0]
-        dataset['PRED_1'][i] = dataset[feature][i][1]
-    
-    return count_pred
 
-PRED_PROB_stats(exit_data,'PRED')
-print(exit_data['PROB'][2][1])
-len(exit_data.index)
 # =============================================================================
 # Проверим работоспособность модели на клиентах, оформивших второе авто
 # после построения модели.
