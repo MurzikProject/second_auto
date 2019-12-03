@@ -271,6 +271,9 @@ def PRED_PROB_stats(dataset,feature):
     # Добавим два поля в датасет с соответствующими вероятностями    
     dataset['PROB_0'] = prob_0_values
     dataset['PROB_1'] = prob_1_values
+    
+    #Удалим поле типа OBJECT с вероятностями двух исходов
+    dataset = dataset.drop([feature], axis=1, inplace=True)
 
 #==============================================================================
 # 1. DATA CLEANING AND FORMATTING
@@ -627,7 +630,7 @@ for i in range(len(y)):
     exit_data.loc[i,'PROB'] = z_prob[0]
 
 exit_data.shape
-exit_data.head(10)
+exit_data[exit_data.PRED==0].head(10)
 
 # Сгруппируем объекты по децилям вероятностей
 PRED_PROB_stats(exit_data,'PROB')
